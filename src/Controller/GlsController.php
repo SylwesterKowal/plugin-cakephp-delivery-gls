@@ -157,12 +157,13 @@ class GlsController extends GlsAppController
             $oCons->consign_prep_data->srv_ppe->rphone = 'RPhone';
             $oCons->consign_prep_data->srv_ppe->rcontact = 'RContact';
             */
+            $oCons->consign_prep_data->parcels = new \stdClass();
+            $oCons->consign_prep_data->weight = $this->recivesData['TW'];
+            $oCons->consign_prep_data->quantity = 1; // overwrited by ParcelsArray
 
             $maxWeightNetto = $this->getMaxParcelWeights($oCons, $hClient);
             $maxWeightBrutto = $maxWeightNetto + 3;
-            if ($this->recivesData['TW'] >= $maxWeightBrutto) {
-
-                $oCons->consign_prep_data->parcels = new \stdClass();
+            if ($this->recivesData['TW'] >= $maxWeightBrutto && $maxWeightNetto != 0) {
 
                 $oParcel = new \stdClass();
                 $oParcel->reference = $this->recivesData['ID'] . ' P.1';
@@ -175,8 +176,12 @@ class GlsController extends GlsAppController
                 $oCons->consign_prep_data->parcels->items[] = $oParcel;
 
             } else {
-                $oCons->consign_prep_data->weight = $this->recivesData['TW'];
-                $oCons->consign_prep_data->quantity = 1; // overwrited by ParcelsArray
+
+
+                $oParcel = new \stdClass();
+                $oParcel->reference = $this->recivesData['ID'] . ' P.1';
+                $oParcel->weight = $this->recivesData['TW'];
+                $oCons->consign_prep_data->parcels->items[] = $oParcel;
             }
 
 
@@ -212,9 +217,8 @@ class GlsController extends GlsAppController
 
             $oClient = $hClient->adeServices_GetMaxParcelWeights($cSess);
 
-            print_r($oClient);
             // stdClass Object ( [return] => stdClass Object ( [weight_max_national] => 31.5 [weight_max_international] => 50 ) )
-            $oClient->return->weight_max_national;
+            return $oClient->return->weight_max_national;
 
 
         } catch (SoapFault $fault) {
