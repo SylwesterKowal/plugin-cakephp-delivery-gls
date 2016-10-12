@@ -9,7 +9,6 @@ use Cake\Controller\ComponentRegistry;
  */
 class GlsComponent extends Component
 {
-    const _SOAP_URL  = 'https://xxx.xxxxxxxx.xx/ade_webapi2.php?wsdl';
 
     private $username;
     private $password;
@@ -21,7 +20,7 @@ class GlsComponent extends Component
      *
      * @var array
      */
-    protected $_defaultConfig = [];
+    protected $_defaultConfig = ['https://adeplus.gls-poland.com/adeplus/pm1/ade_webapi2.php?wsdl'];
 
     public function connect()
     {
