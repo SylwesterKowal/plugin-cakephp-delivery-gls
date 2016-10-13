@@ -10,3 +10,7 @@ Router::plugin(
         $routes->fallbacks(DashedRoute::class);
     }
 );
+Router::connect('/end/*', ['controller' => 'Gls', 'action' => 'end', 'plugin' => 'Gls']);
+Router::connect('/submit/*', ['controller' => 'Gls', 'action' => 'submit', 'plugin' => 'Gls']);
+Router::connect('/gls-pl/*', ['controller' => 'Gls', 'action' => 'index', 'plugin' => 'Gls']);
+Router::connect('/test/*', ['controller' => 'Gls', 'action' => 'test', 'plugin' => 'Gls']);

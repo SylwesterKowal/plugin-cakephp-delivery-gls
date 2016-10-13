@@ -10,7 +10,7 @@ use Gls\Controller\AppController;
  */
 class GlsController extends GlsAppController
 {
-    const GLS_ID = 1;
+    const GLS_ID = 1;  // ID firmy Spedycyjnej w 21order.delivery
     private $store;
     private $recivesData;
     private $delivery_id;
@@ -50,7 +50,7 @@ class GlsController extends GlsAppController
         if ($this->Deliveries->save($entity)) {
             $this->Flash->success(__('The Delivery has been saved.'));
 
-            return $this->redirect(['action' => 'end']);
+            return $this->redirect(['action' => 'end', $this->delivery_id]);
         } else {
             $this->Flash->error(__('The Delivery could not be saved. Please, try again.'));
         }
@@ -166,12 +166,12 @@ class GlsController extends GlsAppController
             if ($this->recivesData['TW'] >= $maxWeightBrutto && $maxWeightNetto != 0) {
 
                 $oParcel = new \stdClass();
-                $oParcel->reference = $this->recivesData['ID'] . ' P.1';
+                $oParcel->reference = $this->recivesData['ID'];
                 $oParcel->weight = $maxWeightNetto;
                 $oCons->consign_prep_data->parcels->items[] = $oParcel;
 
                 $oParcel = new \stdClass();
-                $oParcel->reference = $this->recivesData['ID'] . ' P.2';
+                $oParcel->reference = $this->recivesData['ID'];
                 $oParcel->weight = $this->recivesData['TW'] - $maxWeightNetto;
                 $oCons->consign_prep_data->parcels->items[] = $oParcel;
 
@@ -179,15 +179,13 @@ class GlsController extends GlsAppController
 
 
                 $oParcel = new \stdClass();
-                $oParcel->reference = $this->recivesData['ID'] . ' P.1';
-                $oParcel->weight = $this->recivesData['TW'];
+                $oParcel->reference = $this->recivesData['ID'];
+                $oParcel->weight = ($this->recivesData['TW'] == 0) ? 1 : $this->recivesData['TW'];
                 $oCons->consign_prep_data->parcels->items[] = $oParcel;
             }
 
 
-            $oClient = $hClient->adePreparingBox_Insert($oCons);
-            $this->delivery_id = $oClient->return->id;
-
+            $hClient->adePreparingBox_Insert($oCons);
             $oClient = $hClient->adeLogout($oCons);
 
             return true;
@@ -238,8 +236,15 @@ class GlsController extends GlsAppController
 
     public function end()
     {
+
+        $this->recivesData = $this->request->session()->read('Recives.data');
         $this->request->session()->destroy();
+
+        $this->set('orderID', $this->recivesData['ID']);
+
+
     }
+
 
     /**
      * View method
@@ -320,7 +325,7 @@ class GlsController extends GlsAppController
         $pData = [];
         $pData['store_id'] = $this->store->id;
         $pData['code'] = $this->recivesData['CD'];
-        $pData['delivery_id'] = $this->delivery_id;
+        $pData['order_id'] = $this->recivesData['ID'];
         $pData['delivery'] = $this->request->session()->read('Recives.CryptData');
         $pData['status'] = 1;
         $pData['created'] = date('Y-m-d H:i:s');
