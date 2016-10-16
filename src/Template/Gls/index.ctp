@@ -17,3 +17,15 @@ if (!$setConfig) {
     echo $this->Form->button(__('Submit'));
     echo $this->Form->end();
 }
+
+
+?>
+<br/>
+<hr>
+<?php
+
+if(isset($errors) && count($errors) > 0){
+    foreach ($errors as $ek => $err){
+        echo $err.'<br/>';
+    }
+}
