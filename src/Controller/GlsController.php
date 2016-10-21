@@ -194,10 +194,10 @@ class GlsController extends GlsAppController
             $oBox = $hClient->adePreparingBox_Insert($oCons);
             $this->delivery_id = $oBox->return->id;
 
-            $idNadania = $this->createPickUp($oClient->return->session, $hClient);
-
-            $this->parcel_number = $this->getParcelID($szSession, $idNadania, $hClient);
-            $this->sendTrackParcelNumber();
+//            $idNadania = $this->createPickUp($oClient->return->session, $hClient);
+//
+//            $this->parcel_number = $this->getParcelID($szSession, $idNadania, $hClient);
+//            $this->sendTrackParcelNumber();
 
             $hClient->adeLogout($oCons);
 
@@ -220,107 +220,7 @@ class GlsController extends GlsAppController
 
     }
 
-    private function sendTrackParcelNumber()
-    {
-        $order_data = [
-            'orderId' => $this->recivesData['ID'],
-            'code' => $this->recivesData['CD'],
-            'title' => 'GLS',
-            'number' => $this->parcel_number
-        ];
 
-        $page = '/ordersgrid/index/index';
-        $url = 'http://' . $this->recivesData['HO'] . $page;
-        $plaintext = serialize($order_data);
-        $key = md5($this->recivesData['CD'], true);
-        $iv_size = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_CBC);
-        $iv = mcrypt_create_iv($iv_size, MCRYPT_RAND);
-        $ciphertext = mcrypt_encrypt(MCRYPT_RIJNDAEL_128, $key, $plaintext, MCRYPT_MODE_CBC, $iv);
-        $ciphertext = $iv . $ciphertext;
-        $ciphertext_base64 = base64_encode($ciphertext);
-
-
-        $data['data'] = $ciphertext_base64;
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
-        $code = curl_exec($ch);
-        curl_close($ch);
-    }
-
-    private function createPickUp($cSess, $hClient)
-    {
-
-        try {
-
-            $oInput = new \stdClass();
-            $oInput->session = $cSess;
-            $oInput->consigns_ids = new \stdClass();
-            $oInput->consigns_ids->items[] = $this->delivery_id;
-            $oInput->desc = $this->recivesData['ID'];
-            $oClient = $hClient->adePickup_Create($oInput);
-            return $oClient->return->id;
-
-        } catch (\SoapFault $fault) {
-
-            println('Code: ' . $fault->faultcode . ', FaultString: ' . $fault->faultstring);
-            /* for debug:
-            echo '<h2>Request</h2>';
-            echo '<pre>' . $hClient->__getLastRequestHeaders() . '</pre>';
-            echo '<pre>' . htmlspecialchars( $hClient->__getLastRequest(), ENT_QUOTES ) . '</pre>';
-            echo '<h2>Response</h2>';
-            echo '<pre>' . $hClient->__getLastResponseHeaders() . '</pre>';
-            echo '<pre>' . htmlspecialchars( $hClient->__getLastResponse(), ENT_QUOTES ) . '</pre>';
-            */
-
-        }
-    }
-
-    private function getParcelID($szSession, $idNadania, $hClient)
-    {
-        $oInput = new \stdClass();
-        $oInput->session = $szSession;
-        $oInput->id = $idNadania;
-        $oInput->id_start = 0;
-        $oPaczki = $hClient->adePickup_GetConsignIDs($oInput);
-
-        $percelNumber = '';
-        if (is_array($oPaczki->return->items)) {
-            foreach ($oPaczki->return->items as $ppkeys => $paczki) {
-                $oInput = new \stdClass();
-                $oInput->session = $szSession;
-                $oInput->id = $paczki;
-                $oPaczka = $hClient->adePickup_GetConsign($oInput);
-                if (is_array($oPaczka->return->parcels->items)) {
-                    $percelNumbers = [];
-                    foreach ($oPaczka->return->parcels->items as $ipkey => $parcel) {
-                        $percelNumbers[] = $parcel->number;
-                    }
-                    $percelNumber = implode(',', $percelNumbers);
-                } else {
-                    $percelNumber = $oPaczka->return->parcels->items->number;
-                }
-            }
-        } else {
-            $oInput = new \stdClass();
-            $oInput->session = $szSession;
-            $oInput->id = $oPaczki->return->items;
-            $oPaczka = $hClient->adePickup_GetConsign($oInput);
-            if (is_array($oPaczka->return->parcels->items)) {
-                $percelNumbers = [];
-                foreach ($oPaczka->return->parcels->items as $ipkey => $parcel) {
-                    $percelNumbers[] = $parcel->number;
-                }
-                $percelNumber = implode(',', $percelNumbers);
-            } else {
-                $percelNumber = $oPaczka->return->parcels->items->number;
-            }
-        }
-        return $percelNumber;
-    }
 
     private function getMaxParcelWeights($cSess, $hClient)
     {
@@ -439,6 +339,7 @@ class GlsController extends GlsAppController
         $pData = [];
         $pData['store_id'] = $this->store->id;
         $pData['code'] = $this->recivesData['CD'];
+        $pData['host'] = $this->recivesData['HO'];
         $pData['order_id'] = $this->recivesData['ID'];
         $pData['parcel_number'] = $this->parcel_number;
         $pData['delivery'] = $this->request->session()->read('Recives.CryptData');
