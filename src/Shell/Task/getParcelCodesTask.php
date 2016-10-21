@@ -60,6 +60,9 @@ class getParcelCodesTask extends QueueTask
                     ->connect()
                     ->checkParcelIsSetForOrder()
                     ->saveParcelInStore();
+
+                $this->glsComponent->disconect();
+
                 if ($err == 1) {
                     $this->setStatus($data, ['status' => 1, 'errors' => '']);
                     return true;

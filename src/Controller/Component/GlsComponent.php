@@ -15,6 +15,7 @@ class GlsComponent extends Component
     private $session;
     private $hClient;
     private $store;
+    private $host;
     private $orderId;
     private $deliveryId;
     private $percelNumber;
@@ -86,9 +87,14 @@ class GlsComponent extends Component
         return $this;
     }
 
+    /**
+     * Jeśli odczytane zostaną numery zadanie jest zamykane jesli nie czeka na kolejne runworker;
+     * @return bool
+     */
     public function saveParcelInStore()
     {
-        $this->sendTrackParcelNumber();
+        return $this->sendTrackParcelNumber();
+
     }
 
     private function getDeliveryData($data)
@@ -107,37 +113,43 @@ class GlsComponent extends Component
         $this->store = $this->Stores->find()
             ->where(['code' => $delivery->code, 'curier_id' => self::GLS_ID])
             ->first();
+        $this->host = $delivery->host;
     }
 
     private function sendTrackParcelNumber()
     {
-        $order_data = [
-            'orderId' => $this->orderId,
-            'code' => $this->store->code,
-            'title' => 'GLS',
-            'number' => implode(', ', $this->percelNumber)
-        ];
+        if (is_array($this->percelNumber) && count($this->percelNumber >= 1)) {
+            $order_data = [
+                'orderId' => $this->orderId,
+                'code' => $this->store->code,
+                'title' => 'GLS',
+                'number' => implode(', ', $this->percelNumber)
+            ];
 
-        $page = '/ordersgrid/index/index';
-        $url = 'http://' . $this->recivesData['HO'] . $page;
-        $plaintext = serialize($order_data);
-        $key = md5($this->recivesData['CD'], true);
-        $iv_size = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_CBC);
-        $iv = mcrypt_create_iv($iv_size, MCRYPT_RAND);
-        $ciphertext = mcrypt_encrypt(MCRYPT_RIJNDAEL_128, $key, $plaintext, MCRYPT_MODE_CBC, $iv);
-        $ciphertext = $iv . $ciphertext;
-        $ciphertext_base64 = base64_encode($ciphertext);
+            $page = '/ordersgrid/index/index';
+            $url = 'http://' . $this->host . $page;
+            $plaintext = serialize($order_data);
+            $key = md5($this->store->code, true);
+            $iv_size = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_CBC);
+            $iv = mcrypt_create_iv($iv_size, MCRYPT_RAND);
+            $ciphertext = mcrypt_encrypt(MCRYPT_RIJNDAEL_128, $key, $plaintext, MCRYPT_MODE_CBC, $iv);
+            $ciphertext = $iv . $ciphertext;
+            $ciphertext_base64 = base64_encode($ciphertext);
 
 
-        $data['data'] = $ciphertext_base64;
+            $data['data'] = $ciphertext_base64;
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
-        $code = curl_exec($ch);
-        curl_close($ch);
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+            $code = curl_exec($ch);
+            curl_close($ch);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
