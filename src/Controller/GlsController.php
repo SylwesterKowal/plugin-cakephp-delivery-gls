@@ -1,7 +1,10 @@
 <?php
 namespace Gls\Controller;
 
+use App\Shell\Task\getParcelCodesTask;
 use Gls\Controller\AppController;
+use Exception;
+use Queue\Shell\Task\QueueTask;
 
 /**
  * Gls Controller
@@ -52,9 +55,21 @@ class GlsController extends GlsAppController
     {
         $entity = $this->Deliveries->newEntity();
 
-        $entity = $this->Deliveries->patchEntity($entity, $this->prepareDeliveryData());
+        $deliveries_ = $this->prepareDeliveryData();
+        $entity = $this->Deliveries->patchEntity($entity, $deliveries_);
         if ($this->Deliveries->save($entity)) {
             $this->Flash->success(__('The Delivery has been saved.'));
+
+
+            /**
+             * Cretae Task
+             */
+            $getParcelCodesTask = new getParcelCodesTask();
+            $getParcelCodesTask
+                ->setOrderId($deliveries_['order_id'])
+                ->setDeliveryId($this->Deliveries->id)
+                ->add();
+
 
             return $this->redirect(['action' => 'end', $this->delivery_id]);
         } else {
@@ -201,6 +216,7 @@ class GlsController extends GlsAppController
 
             $hClient->adeLogout($oCons);
 
+
             return true;
 
         } catch (\SoapFault $fault) {
@@ -219,7 +235,6 @@ class GlsController extends GlsAppController
         }
 
     }
-
 
 
     private function getMaxParcelWeights($cSess, $hClient)
