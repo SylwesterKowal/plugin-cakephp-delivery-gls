@@ -7,7 +7,7 @@
  */
 
 
-namespace App\Shell\Task;
+namespace Gls\Shell\Task;
 
 use Cake\Controller\ComponentRegistry;
 use Exception;
@@ -48,7 +48,7 @@ class getParcelCodesTask extends QueueTask
         return (bool)$this->QueuedTasks->createJob('CheckOrderParcelNumber', $data);
     }
 
-    public function run($data)
+    public function run($data, $id = NULL)
     {
         try {
             $delivery = $this->getDeliveryData($data);

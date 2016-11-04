@@ -1,10 +1,11 @@
 <?php
 namespace Gls\Controller;
 
-use App\Shell\Task\getParcelCodesTask;
+
 use Gls\Controller\AppController;
 use Exception;
 use Queue\Shell\Task\QueueTask;
+use Gls\Shell\Task\getParcelCodesTask;
 
 /**
  * Gls Controller
@@ -57,7 +58,7 @@ class GlsController extends GlsAppController
 
         $deliveries_ = $this->prepareDeliveryData();
         $entity = $this->Deliveries->patchEntity($entity, $deliveries_);
-        if ($this->Deliveries->save($entity)) {
+        if ($record_id = $this->Deliveries->save($entity)) {
             $this->Flash->success(__('The Delivery has been saved.'));
 
 
@@ -67,7 +68,7 @@ class GlsController extends GlsAppController
             $getParcelCodesTask = new getParcelCodesTask();
             $getParcelCodesTask
                 ->setOrderId($deliveries_['order_id'])
-                ->setDeliveryId($this->Deliveries->id)
+                ->setDeliveryId($record_id->id)
                 ->add();
 
 
@@ -80,8 +81,9 @@ class GlsController extends GlsAppController
 
     public function submit()
     {
-        $hClient = new \SoapClient($this->store->api_url);
+
         try {
+            $hClient = new \SoapClient($this->store->api_url);
 
             $oCredit = new \stdClass();
             $oCredit->user_name = $this->store->api_username;
@@ -108,7 +110,8 @@ class GlsController extends GlsAppController
             $oCons->consign_prep_data->references = $this->recivesData['ID'];
             $oCons->consign_prep_data->notes = $this->recivesData['HO'];
 
-            if ($this->store->cod_store_code == $this->recivesData['PE']) {
+            if ($this->checkIsCodOrder()) {
+
                 $oCons->consign_prep_data->srv_bool = new \stdClass();
                 $oCons->consign_prep_data->srv_bool->cod = 1;
                 $oCons->consign_prep_data->srv_bool->cod_amount = $this->recivesData['VA'];
@@ -236,6 +239,21 @@ class GlsController extends GlsAppController
 
     }
 
+    /**
+     * Sprawdza czy zamowienie jest typu COD
+     * W bazie zapisana jest lista typów zamówień COD w formacie JSON
+     * @return bool
+     */
+    private function checkIsCodOrder()
+    {
+        $codCode = array_flip(json_decode($this->store->cod_store_code, true));
+        if (array_key_exists($this->recivesData['PE'], $codCode)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 
     private function getMaxParcelWeights($cSess, $hClient)
     {
@@ -339,7 +357,7 @@ class GlsController extends GlsAppController
         $pData = [];
         $pData['curier_id'] = self::GLS_ID;
         $pData['code'] = $this->recivesData['CD'];
-        $pData['cod_store_code'] = $this->request->data['cod_store_code'];
+        $pData['cod_store_code'] = json_encode($this->request->data['cod_store_code']);
         $pData['api_username'] = $this->request->data['api_username'];
         $pData['api_password'] = $this->request->data['api_password'];
         $pData['api_url'] = $this->request->data['api_url'];

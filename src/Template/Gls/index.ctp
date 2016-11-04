@@ -8,7 +8,7 @@
 
 if (!$setConfig) {
     echo $this->Form->create($store);
-    echo $this->Form->input('cod_store_code', ['options' => $gls['ME']]);
+    echo $this->Form->input('cod_store_code', ['options' => $gls['ME'],'multiple' =>true]);
     echo $this->Form->input('api_username');
     echo $this->Form->input('api_password');
     echo $this->Form->input('api_url');
