@@ -45,7 +45,7 @@ class getParcelCodesTask extends QueueTask
             'order_id' => $this->orderId,
             'delivery_id' => $this->deliveryId,
         ];
-        return (bool)$this->QueuedTasks->createJob('CheckOrderParcelNumber', $data);
+        return (bool)$this->QueuedTasks->createJob('getParcelCodes', $data);
     }
 
     public function run($data, $id = NULL)
