@@ -20,7 +20,7 @@ use Cake\Log\Log;
  * Class QueueImportProductTo21OrderTask
  * @package App\Shell\Task
  */
-class getParcelCodesTask extends QueueTask
+class QueuegetParcelCodesTask extends QueueTask
 {
 
     private $orderId;
@@ -48,14 +48,16 @@ class getParcelCodesTask extends QueueTask
         return (bool)$this->QueuedJobs->createJob('getParcelCodes', $data);
     }
 
-    public function run($data, $id = NULL)
+    public function run(array $data, $id)
     {
+        $this->glsComponent = new GlsComponent(new ComponentRegistry());
         try {
-            $delivery = $this->getDeliveryData($data);
+            $delivery = $this->glsComponent->init($data)->getDeliveryData($data);
             if ($delivery /*&& $importProduct->ststus != 1*/) { // istnieje oraz nie był jeszcze importowany
 
-                $this->glsComponent = new GlsComponent(new ComponentRegistry());;
-                $err = $this->glsComponent
+                $this->out($data['order_id']);
+
+                $result = $this->glsComponent
                     ->init($data)
                     ->connect()
                     ->checkParcelIsSetForOrder()
@@ -63,13 +65,15 @@ class getParcelCodesTask extends QueueTask
 
                 $this->glsComponent->disconect();
 
-                if ($err == 1) {
-                    $this->setStatus($data, ['status' => 1, 'errors' => '']);
+                if ($result['err'] == 0) {
+                    $this->out($result['pn']);
+                    $this->out($result['mess']);
+//                    $this->setStatus($data, ['status' => 1, 'errors' => '']);
                     return true;
                 } else {
-                    $this->out($err);
+                    $this->out($result['mess']);
 //                    $this->hr();
-                    $this->setStatus($data, ['status' => 9, 'errors' => $err]);
+//                    $this->setStatus($data, ['status' => 9, 'errors' => $err]);
                     return false;
                 }
 

@@ -3,6 +3,7 @@ namespace Gls\Controller\Component;
 
 use Cake\Controller\Component;
 use Cake\Controller\ComponentRegistry;
+use Cake\ORM\TableRegistry;
 
 /**
  * Gls component
@@ -10,6 +11,7 @@ use Cake\Controller\ComponentRegistry;
 class GlsComponent extends Component
 {
 
+    const GLS_ID = 1;  // ID firmy Spedycyjnej w 21order.delivery
     private $username;
     private $password;
     private $session;
@@ -19,6 +21,8 @@ class GlsComponent extends Component
     private $orderId;
     private $deliveryId;
     private $percelNumber;
+    private $Stores;
+    private $Deliveries;
 
     /**
      * Default configuration.
@@ -29,7 +33,10 @@ class GlsComponent extends Component
 
     public function init($data)
     {
-        $this->loadModel('Stores');
+//        $this->loadModel('Stores');
+//        $this->loadModel('Deliveries');
+        $this->Stores = TableRegistry::get('Stores');
+        $this->Deliveries = TableRegistry::get('Deliveries');
 
         $this->orderId = $data['order_id'];
         $this->deliveryId = $data['delivery_id'];
@@ -46,8 +53,8 @@ class GlsComponent extends Component
         try {
             $this->hClient = new \SoapClient($this->store->api_url);
             $oCredit = new \stdClass();
-            $oCredit->username = $this->store->api_username;
-            $oCredit->password = $this->store->api_password;
+            $oCredit->user_name = $this->store->api_username;
+            $oCredit->user_password = $this->store->api_password;
 
             $oClient = $this->hClient->adeLogin($oCredit);
             $this->session = $oClient->return->session;
@@ -97,7 +104,7 @@ class GlsComponent extends Component
 
     }
 
-    private function getDeliveryData($data)
+    public function getDeliveryData($data)
     {
         return $this->Deliveries->find()
             ->where([
@@ -105,6 +112,17 @@ class GlsComponent extends Component
                 'Deliveries.order_id' => $this->orderId])
             ->contain('Stores')
             ->first();
+    }
+
+    /**
+     * Zapisuje numer przewozowy w Modelu
+     */
+    public function setTrackParcelNumberInDeliveryData()
+    {
+        $this->Deliveries->updateAll(
+            ['parcel_number' => implode(', ', $this->percelNumber)], // fields
+            ['Deliveries.order_id' => $this->orderId, 'Deliveries.code' => $this->store->code]);
+
     }
 
     private function setSore($delivery)
@@ -126,6 +144,7 @@ class GlsComponent extends Component
                 'number' => implode(', ', $this->percelNumber)
             ];
 
+
             $page = '/ordersgrid/index/index';
             $url = 'http://' . $this->host . $page;
             $plaintext = serialize($order_data);
@@ -146,9 +165,12 @@ class GlsComponent extends Component
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
             $code = curl_exec($ch);
             curl_close($ch);
-            return true;
+
+            $this->setTrackParcelNumberInDeliveryData(); // 356814036995
+
+            return ['err' => 0, 'pn' => implode(', ', $this->percelNumber), 'mess' => $code];
         } else {
-            return false;
+            return ['err' => 1, 'pm' => '', 'mess' => 'not found parcel'];
         }
     }
 
@@ -208,7 +230,7 @@ class GlsComponent extends Component
                 $oInput->session = $this->session;
                 $oInput->id = $paczki;
                 $oPaczka = $this->hClient->adePickup_GetConsign($oInput);
-                debug($oPaczka);
+//                debug($oPaczka);
                 if (is_array($oPaczka->return->parcels->items)) {
                     $percelNumbers = [];
                     foreach ($oPaczka->return->parcels->items as $ipkey => $parcel) {
@@ -242,6 +264,7 @@ class GlsComponent extends Component
                 }
             }
         }
+
         return $percelNumber;
     }
 
@@ -254,7 +277,7 @@ class GlsComponent extends Component
             $oInput->id_start = 0;
             $oClient = $this->hClient->adePickup_GetIDs($oInput);
 
-            debug($oClient);
+//            debug($oClient);
             // stdClass Object ( [return] => stdClass Object ( [items] => Array ( [0] => 377 [1] => 376 [2] => 375 [3] => 374 [4] => 373 [5] => 372 [6] => 371 [7] => 370 ) ) )
 
             return $oClient->return->items;
