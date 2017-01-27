@@ -35,8 +35,8 @@ class GlsComponent extends Component
     {
 //        $this->loadModel('Stores');
 //        $this->loadModel('Deliveries');
-        $this->Stores = TableRegistry::get('Stores');
         $this->Deliveries = TableRegistry::get('Deliveries');
+        $this->Stores = TableRegistry::get('Stores');
 
         $this->orderId = $data['order_id'];
         $this->deliveryId = $data['delivery_id'];
@@ -119,6 +119,7 @@ class GlsComponent extends Component
      */
     public function setTrackParcelNumberInDeliveryData()
     {
+        $this->Deliveries = TableRegistry::get('Deliveries');
         $this->Deliveries->updateAll(
             ['parcel_number' => implode(', ', $this->percelNumber)], // fields
             ['Deliveries.order_id' => $this->orderId, 'Deliveries.code' => $this->store->code]);
@@ -234,13 +235,13 @@ class GlsComponent extends Component
                 if (is_array($oPaczka->return->parcels->items)) {
                     $percelNumbers = [];
                     foreach ($oPaczka->return->parcels->items as $ipkey => $parcel) {
-                        if ($this->orderId == $parcel->reference) {
+                        if (preg_match("/\b{$this->orderId}\b/i", $parcel->reference)) {
                             $percelNumbers[] = $parcel->number;
                         }
                     }
                     $percelNumber = implode(',', $percelNumbers);
                 } else {
-                    if ($this->orderId == $oPaczka->return->parcels->items->reference) {
+                    if (preg_match("/\b{$this->orderId}\b/i", $oPaczka->return->parcels->items->reference)) {
                         $percelNumber = $oPaczka->return->parcels->items->number;
                     }
                 }

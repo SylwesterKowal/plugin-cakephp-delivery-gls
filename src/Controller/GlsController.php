@@ -4,8 +4,8 @@ namespace Gls\Controller;
 
 use Gls\Controller\AppController;
 use Exception;
+use Gls\Shell\Task\QueuegetParcelCodesTask;
 use Queue\Shell\Task\QueueTask;
-use Gls\Shell\Task\getParcelCodesTask;
 
 /**
  * Gls Controller
@@ -65,7 +65,7 @@ class GlsController extends GlsAppController
             /**
              * Cretae Task
              */
-            $getParcelCodesTask = new getParcelCodesTask();
+            $getParcelCodesTask = new QueuegetParcelCodesTask();
             $getParcelCodesTask
                 ->setOrderId($deliveries_['order_id'])
                 ->setDeliveryId($record_id->id)
