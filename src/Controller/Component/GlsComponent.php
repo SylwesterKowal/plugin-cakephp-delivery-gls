@@ -91,6 +91,7 @@ class GlsComponent extends Component
                 }
             }
         }
+        $this->setTrackParcelNumberInDeliveryData();
         return $this;
     }
 
@@ -101,7 +102,6 @@ class GlsComponent extends Component
     public function saveParcelInStore()
     {
         return $this->sendTrackParcelNumber();
-
     }
 
     public function getDeliveryData($data)
@@ -167,7 +167,6 @@ class GlsComponent extends Component
             $code = curl_exec($ch);
             curl_close($ch);
 
-            $this->setTrackParcelNumberInDeliveryData(); // 356814036995
 
             return ['err' => 0, 'pn' => implode(', ', $this->percelNumber), 'mess' => $code];
         } else {
