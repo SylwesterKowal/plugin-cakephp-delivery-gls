@@ -54,7 +54,6 @@ class QueuegetParcelCodesTask extends QueueTask
 
     public function run(array $data, $id)
     {
-
         try {
             $this->glsComponent = new GlsComponent(new ComponentRegistry());
 
@@ -69,10 +68,6 @@ class QueuegetParcelCodesTask extends QueueTask
                 ->checkParcelIsSetForOrder()
                 ->saveParcelInStore();
 
-            // problemy z długością sesji mysql
-//            if (isset($result['pn']) && !empty($result['pn'])) {
-//                $this->setTrackParcelNumberInDeliveryData($result['pn']);
-//            }
 
             $this->glsComponent->disconect();
 
@@ -80,12 +75,9 @@ class QueuegetParcelCodesTask extends QueueTask
             if ($result['err'] == 0) {
                 $this->out($result['pn']);
                 $this->out($result['mess']);
-//                    $this->setStatus($data, ['status' => 1, 'errors' => '']);
                 return true;
             } else {
                 $this->out($result['mess']);
-//                    $this->hr();
-//                    $this->setStatus($data, ['status' => 9, 'errors' => $err]);
                 return false;
             }
 
@@ -103,8 +95,7 @@ class QueuegetParcelCodesTask extends QueueTask
     /**
      * Zapisuje numer przewozowy w Modelu
      */
-    public
-    function setTrackParcelNumberInDeliveryData($pn)
+    public function setTrackParcelNumberInDeliveryData($pn)
     {
         $this->Deliveries = TableRegistry::get('Deliveries');
 
