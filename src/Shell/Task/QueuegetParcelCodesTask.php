@@ -56,9 +56,6 @@ class QueuegetParcelCodesTask extends QueueTask
     {
 
         try {
-
-            $this->connection = ConnectionManager::get('default');
-
             $this->glsComponent = new GlsComponent(new ComponentRegistry());
 
             $this->deliveryId = $data['delivery_id'];
@@ -72,15 +69,13 @@ class QueuegetParcelCodesTask extends QueueTask
                 ->checkParcelIsSetForOrder()
                 ->saveParcelInStore();
 
-            if (isset($result['pn']) && !empty($result['pn'])) {
-                $this->setTrackParcelNumberInDeliveryData($result['pn']);
-            }
+            // problemy z długością sesji mysql
+//            if (isset($result['pn']) && !empty($result['pn'])) {
+//                $this->setTrackParcelNumberInDeliveryData($result['pn']);
+//            }
 
             $this->glsComponent->disconect();
 
-            if ($this->connection->isConnected()) {
-                $this->connection->disconnect();
-            }
 
             if ($result['err'] == 0) {
                 $this->out($result['pn']);
@@ -111,9 +106,6 @@ class QueuegetParcelCodesTask extends QueueTask
     public
     function setTrackParcelNumberInDeliveryData($pn)
     {
-        if (!$this->connection->isConnected()) {
-            $this->connection->connect();
-        }
         $this->Deliveries = TableRegistry::get('Deliveries');
 
 
