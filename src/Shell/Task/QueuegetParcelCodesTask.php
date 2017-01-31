@@ -25,6 +25,7 @@ class QueuegetParcelCodesTask extends QueueTask
 
     private $orderId;
     private $deliveryId;
+    private $delivery;
 
     public function setOrderId($orderId)
     {
@@ -52,8 +53,8 @@ class QueuegetParcelCodesTask extends QueueTask
     {
         $this->glsComponent = new GlsComponent(new ComponentRegistry());
         try {
-            $delivery = $this->glsComponent->init($data)->getDeliveryData($data);
-            if ($delivery /*&& $importProduct->ststus != 1*/) { // istnieje oraz nie był jeszcze importowany
+            $this->delivery = $this->glsComponent->init($data)->getDeliveryData($data);
+            if ($this->delivery /*&& $importProduct->ststus != 1*/) { // istnieje oraz nie był jeszcze importowany
 
                 $this->out($data['order_id']);
 
@@ -64,6 +65,10 @@ class QueuegetParcelCodesTask extends QueueTask
                     ->saveParcelInStore();
 
                 $this->glsComponent->disconect();
+
+                if (isset($result['pn']) && !empty($result['pn'])) {
+                    $this->setTrackParcelNumberInDeliveryData($result['pn']);
+                }
 
                 if ($result['err'] == 0) {
                     $this->out($result['pn']);
@@ -85,6 +90,19 @@ class QueuegetParcelCodesTask extends QueueTask
         }
 
         return true;
+    }
+
+
+    /**
+     * Zapisuje numer przewozowy w Modelu
+     */
+    public function setTrackParcelNumberInDeliveryData($pn)
+    {
+//        $this->Deliveries = TableRegistry::get('Deliveries');
+        $this->Deliveries->updateAll(
+            ['parcel_number' => $pn],
+            ['Deliveries.order_id' => $this->delivery->order_id, 'Deliveries.code' => $this->delivery->code]);
+
     }
 
 

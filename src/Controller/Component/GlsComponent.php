@@ -91,7 +91,6 @@ class GlsComponent extends Component
                 }
             }
         }
-        $this->setTrackParcelNumberInDeliveryData();
         return $this;
     }
 
@@ -114,17 +113,6 @@ class GlsComponent extends Component
             ->first();
     }
 
-    /**
-     * Zapisuje numer przewozowy w Modelu
-     */
-    public function setTrackParcelNumberInDeliveryData()
-    {
-        $this->Deliveries = TableRegistry::get('Deliveries');
-        $this->Deliveries->updateAll(
-            ['parcel_number' => implode(', ', $this->percelNumber)], // fields
-            ['Deliveries.order_id' => $this->orderId, 'Deliveries.code' => $this->store->code]);
-
-    }
 
     private function setSore($delivery)
     {
@@ -170,7 +158,7 @@ class GlsComponent extends Component
 
             return ['err' => 0, 'pn' => implode(', ', $this->percelNumber), 'mess' => $code];
         } else {
-            return ['err' => 1, 'pm' => '', 'mess' => 'not found parcel'];
+            return ['err' => 1, 'pn' => '', 'mess' => 'not found parcel'];
         }
     }
 
