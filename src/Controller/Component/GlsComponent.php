@@ -128,6 +128,11 @@ class GlsComponent extends Component
         $this->host = $delivery->host;
     }
 
+
+    /**
+     * Zapisz numeru przesyłki w sklepie Magento
+     * @return mixed
+     */
     private function sendTrackParcelNumber()
     {
 
@@ -200,7 +205,7 @@ class GlsComponent extends Component
     }
 
     /**
-     * Odczytuje
+     * Odczytuje numer przesyłki z GLS
      *
      * @param $idNadania
      * @return bool|string
